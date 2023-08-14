@@ -317,4 +317,25 @@ def parseCQASMFile(filename: str, **args):
     with open(filename, 'r') as reader:
         return parser.parse(reader.read(), debug=debug, **args)
 
-# parseCQASMFile("/shares/bulk/plehenaff/medina/basis_change_n3.qasm")
+if __name__ == "__main__":
+    result = parseCQASMFile("test.qasm")
+
+    for subcircuit in result.subcircuits:
+        print(f"subcircuit {subcircuit.name}")
+        for instruction in subcircuit.instructions:
+            if instruction.name == "h":
+                print(f"it's a hadamard operating on {', '.join(map(str, instruction.operands))}")
+                print(f"it's controlled by {instruction.controlBits}")
+
+                for op in instruction.operands:
+                    if isinstance(op, Qubit):
+                        print(f"qubit operand {op}")
+                    if isinstance(op, Qubits):
+                        print("Not needed")
+                    if isinstance(op, Literal):
+                        print(f"rotation of angle {op}")
+
+            else:
+                print("it's not a hadamard")
+
+    # print(result)
