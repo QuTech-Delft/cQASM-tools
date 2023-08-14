@@ -1,0 +1,6 @@
+FileName,LengthOfCriticalPath,LengthOfLongestRepeatingSubcircuit,NumberOfRepetitionsOfLongestRepeatingSubcircuit,SubcircuitIndex
+3_17_13.qasm,-1,3,2,0
+4gt5_75.qasm,-1,32,2,0
+4gt10-v1_81.qasm,-1,32,2,0
+4_49_16.qasm,-1,33,2,0
+4gt4-v0_72.qasm,-1,80,2,0
