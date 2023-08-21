@@ -8,10 +8,15 @@ from threading import Lock
 
 OUTPUT_FILE = os.path.dirname(os.path.realpath(__file__)) + "/result.csv"
 
-files = glob.glob(os.path.dirname(os.path.realpath(__file__)) + "/metrics/data/*.qasm")
 
-files = files[:5]
-files = ["metrics/data/3_17_13.qasm", "metrics/data/4_49_16.qasm"]
+MAX_NUM_LINES = 45
+files = []
+
+for f in glob.glob(os.path.dirname(os.path.realpath(__file__)) + "/metrics/data/*.qasm"):
+    num_lines = sum(1 for _ in open(f))
+
+    if num_lines <= MAX_NUM_LINES:
+        files.append(f)
 
 lock = Lock()
 counter = Value('i', 0)
@@ -73,12 +78,11 @@ def processFile(fileName):
 
 
 if __name__ == "__main__":
+    print(f"Will process files: {files}")
+
     with open(OUTPUT_FILE, "w") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=statistics)
         writer.writeheader()
     
-    for f in files:
-        processFile(f)
-
-    # with Pool(8, initargs = (counter, )) as p:
-    #     p.map(processFile, files)
+    with Pool(8, initargs = (counter, )) as p:
+        p.map(processFile, files)

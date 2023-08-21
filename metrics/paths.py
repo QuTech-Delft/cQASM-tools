@@ -1,13 +1,15 @@
 import typing
 from parsing import CQASMParser
-import rustworkx
+import networkx
 import statistics
+import numpy as np
+import math
 from timeit import default_timer as timer
 
 def buildDDG(c: list[CQASMParser.Instruction]):
     start = timer()
-    graph = rustworkx.PyDAG(check_cycle=True, multigraph=False)
-    source = graph.add_node("SOURCE")
+    graph = networkx.DiGraph()
+    graph.add_node("SOURCE")
 
     qubitsToNode = {}
 
@@ -16,53 +18,71 @@ def buildDDG(c: list[CQASMParser.Instruction]):
         if not isinstance(instruction, CQASMParser.Gate):
             raise Exception("Not a gate")
         
-        node = graph.add_node((i, instruction))
+        node = (i, instruction)
+        graph.add_node(node)
 
         for q in instruction.operands:
             if not isinstance(q, CQASMParser.Qubit):
                 continue
             
             if q.index in qubitsToNode:
-                graph.add_edge(qubitsToNode[q.index], node, (graph[qubitsToNode[q.index]][0], graph[node][0]))
+                graph.add_edge(qubitsToNode[q.index], node)
             
             qubitsToNode[q.index] = node
-
-        if (graph.predecessors(node) == []):
-            graph.add_edge(source, node, (graph[source], graph[node][0]))
+        
+        try:
+            next(graph.predecessors(node))
+        except StopIteration:
+            graph.add_edge("SOURCE", node)
 
         i += 1
     
-    sink = graph.add_node("SINK")
+    graph.add_node("SINK")
 
-    for n in graph.node_indices():
-        if (graph.successors(n) == [] and graph[n] != "SINK"):
-            graph.add_edge(n, sink, (graph[n][0], graph[sink]))
+    for n in networkx.nodes(graph):
+        try:
+            next(graph.successors(n))
+        except StopIteration:
+            if n != "SINK":
+                graph.add_edge(n, "SINK")
 
-    assert(graph.num_nodes() == len(c) + 2)
-    assert(rustworkx.is_directed_acyclic_graph(graph))
+    assert(networkx.number_of_nodes(graph) == len(c) + 2)
+    assert(networkx.is_directed_acyclic_graph(graph))
 
-    print(f"Building DDG took {timer() - start} seconds")
+    return graph
 
-    return (source, sink, graph)
-
+def weighted_avg_and_std(values, weights):
+    average = np.average(values, weights=weights)
+    variance = np.average((values - average)**2, weights=weights)
+    return (average, math.sqrt(variance))
 
 def getPathStats(c: list[CQASMParser.Instruction]):
-    source, sink, graph = buildDDG(c)
+    graph = buildDDG(c)
 
-    allSimplePaths = rustworkx.all_simple_paths(graph, source, sink) # This returns a huge list. FIXME: use NetworkX instead.
-    simplePathsLengthsInGates = list(map(lambda x: len(x) - 2, allSimplePaths)) # This removes SOURCE and SINK
+    allSimplePaths = lambda: networkx.all_simple_paths(graph, "SOURCE", "SINK")
 
-    criticalPathLengthInGates = rustworkx.dag_longest_path_length(graph) - 1 # This is in number of gates. dag_longest_path_length returns number of edges.
+    distro = {}
+    n = 0
+    for p in allSimplePaths():
+        n += 1
+        if n % 1000 == 0:
+            print(f"Processed {n} paths")
+        l = len(p) - 2
+        if l in distro:
+            distro[l] += 1
+        else:
+            distro[l] = 1
+    
+    criticalPathLengthInGates = networkx.dag_longest_path_length(graph) - 1 # This is in number of gates. dag_longest_path_length returns number of edges.
 
-    criticalPaths = lambda: filter(lambda path: len(path) - 2 == criticalPathLengthInGates, allSimplePaths)
+    criticalPaths = lambda: filter(lambda path: len(path) - 2 == criticalPathLengthInGates, allSimplePaths())
 
     def numberOfTwoQubitsGates(path):
         result = 0
-        for nodeIndex in path:
-            gate = graph[nodeIndex][1]
-            if isinstance(gate, str):
+        for node in path:
+            if isinstance(node, str):
                 continue
-            
+            gate = node[1]
             assert(isinstance(gate, CQASMParser.Gate))
             if len(list(filter(lambda op: isinstance(op, CQASMParser.Qubit), gate.operands))) == 2:
                 result += 1
@@ -72,13 +92,15 @@ def getPathStats(c: list[CQASMParser.Instruction]):
     numberOfCriticalPaths = sum(1 for _ in criticalPaths())
     numberOfCriticalPathsWithMaxTwoQubitsGates = sum(1 for _ in filter(lambda path: numberOfTwoQubitsGates(path) == maxNumberOfTwoQubitGatesInCriticalPaths, criticalPaths()))
 
+    mean, std = weighted_avg_and_std(list(distro.keys()), list(distro.values()))
+
     return {
         "NumberOfGatesInCriticalPath": criticalPathLengthInGates, # This removes SOURCE and SINK
         "MaxNumberOfTwoQubitGatesInCriticalPath": maxNumberOfTwoQubitGatesInCriticalPaths,
         "NumberOfCriticalPaths": numberOfCriticalPaths,
         "NumberOfCriticalPathsWithMaxTwoQubitsGates": numberOfCriticalPathsWithMaxTwoQubitsGates,
-        "PathLengthMean": statistics.mean(simplePathsLengthsInGates),
-        "PathLengthStandardDeviation": statistics.stdev(simplePathsLengthsInGates) if len(simplePathsLengthsInGates) >= 2 else 0.,
+        "PathLengthMean": mean,
+        "PathLengthStandardDeviation": std,
     }
 
 
@@ -111,9 +133,9 @@ qubits 3
         "NumberOfCriticalPaths": 1,
         "NumberOfCriticalPathsWithMaxTwoQubitsGates": 1,
         "PathLengthMean": 3.5,
-        "PathLengthStandardDeviation": 0.7071067811865476,
+        "PathLengthStandardDeviation": 0.5,
     }
-
+    print(output)
     checkSame(output, expected)
 
 def test2():
@@ -141,6 +163,7 @@ qubits 4
 
     checkSame(output, expected)
 
+
 def test3():
     cq = """
     version 1.0
@@ -161,12 +184,91 @@ qubits 4
         "NumberOfCriticalPaths": 1,
         "NumberOfCriticalPathsWithMaxTwoQubitsGates": 1, # There are no paths with 2q gates.
         "PathLengthMean": 1.5,
-        "PathLengthStandardDeviation": 0.7071067811865476,
+        "PathLengthStandardDeviation": 0.5,
     }
 
     checkSame(output, expected)
+
+
+def test4(): # This illustrates that computing the path statistics is difficult this way: this relatively small circuit already has 53000+ paths from source to sink.
+    cq = """ 
+    version 1.0
+
+qubits 3
+
+.testCircuit
+  h q[1]
+  t q[3]
+  t q[4]
+  t q[1]
+  cnot q[4], q[3]
+  cnot q[1], q[4]
+  cnot q[3], q[1]
+  tdag q[4]
+  cnot q[3], q[4]
+  tdag q[3]
+  tdag q[4]
+  t q[1]
+  cnot q[1], q[4]
+  cnot q[3], q[1]
+  cnot q[4], q[3]
+  h q[1]
+  h q[4]
+  t q[0]
+  t q[2]
+  t q[4]
+  cnot q[2], q[0]
+  cnot q[4], q[2]
+  cnot q[0], q[4]
+  tdag q[2]
+  cnot q[0], q[2]
+  tdag q[0]
+  tdag q[2]
+  t q[4]
+  cnot q[4], q[2]
+  cnot q[0], q[4]
+  cnot q[2], q[0]
+  h q[4]
+  h q[1]
+  t q[3]
+  t q[4]
+  t q[1]
+  cnot q[4], q[3]
+  cnot q[1], q[4]
+  cnot q[3], q[1]
+  tdag q[4]
+  cnot q[3], q[4]
+  tdag q[3]
+  tdag q[4]
+  t q[1]
+  cnot q[1], q[4]
+  cnot q[3], q[1]
+  cnot q[4], q[3]
+  h q[1]
+  h q[4]
+  t q[0]
+  t q[2]
+  t q[4]
+  cnot q[2], q[0]
+  cnot q[4], q[2]
+  cnot q[0], q[4]
+  tdag q[2]
+  cnot q[0], q[2]
+  tdag q[0]
+  tdag q[2]
+  t q[4]
+  cnot q[4], q[2]
+  cnot q[0], q[4]
+  cnot q[2], q[0]
+  h q[4]
+  cnot q[2], q[0]
+"""
+
+    print(getPathStats(CQASMParser.parseCQASMString(cq).subcircuits[0].instructions))
+
 
 if __name__ == "__main__":
     test1()
     test2()
     test3()
+    test4()

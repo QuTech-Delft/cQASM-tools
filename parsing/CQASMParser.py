@@ -85,7 +85,7 @@ precedence = (
 ############ Definition of the abstract syntax tree
 
 class Instruction:
-    pass
+    pass 
 
 class Subcircuit:
     def __init__(self, name: str, instructions: list[Instruction], iterations: int):
@@ -178,6 +178,9 @@ class Gate(Instruction):
         if type(other) is type(self):
             return self.name == other.name and self.operands == other.operands and self.controlBits == other.controlBits
         return False
+    
+    def __hash__(self):
+        return hash(str(self))    
 
 class Mapping(Instruction):
     def __init__(self, variable: Variable, targetQubit: Qubit):
