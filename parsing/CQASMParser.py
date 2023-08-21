@@ -71,8 +71,7 @@ def t_ignore_comment(t):
     t.lexer.lineno += t.value.count('\n')
 
 def t_error(t):
-    print("Illegal character '%s'" % t.value[0])
-    exit(1)
+    raise Exception("Illegal character '%s'" % t.value[0])
 
 import ply.lex as lex
 lexer = lex.lex(debug=debug)
