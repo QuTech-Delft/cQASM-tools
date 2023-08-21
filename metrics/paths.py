@@ -2,8 +2,10 @@ import typing
 from parsing import CQASMParser
 import rustworkx
 import statistics
+from timeit import default_timer as timer
 
 def buildDDG(c: list[CQASMParser.Instruction]):
+    start = timer()
     graph = rustworkx.PyDAG(check_cycle=True, multigraph=False)
     source = graph.add_node("SOURCE")
 
@@ -39,13 +41,15 @@ def buildDDG(c: list[CQASMParser.Instruction]):
     assert(graph.num_nodes() == len(c) + 2)
     assert(rustworkx.is_directed_acyclic_graph(graph))
 
+    print(f"Building DDG took {timer() - start} seconds")
+
     return (source, sink, graph)
 
 
 def getPathStats(c: list[CQASMParser.Instruction]):
     source, sink, graph = buildDDG(c)
 
-    allSimplePaths = rustworkx.all_simple_paths(graph, source, sink)
+    allSimplePaths = rustworkx.all_simple_paths(graph, source, sink) # This returns a huge list. FIXME: use NetworkX instead.
     simplePathsLengthsInGates = list(map(lambda x: len(x) - 2, allSimplePaths)) # This removes SOURCE and SINK
 
     criticalPathLengthInGates = rustworkx.dag_longest_path_length(graph) - 1 # This is in number of gates. dag_longest_path_length returns number of edges.
