@@ -71,5 +71,6 @@ def longestRepeatingSubcircuit(c: list[CQASMParser.Instruction]):
         start = len(c) - i - 1
         t.add(instr=c[start:], position=start)
 
-    return t.deepestInternalNode()
+    deepestInternalNode = t.deepestInternalNode()
+    return { "LongestRepeatingSubcircuit": deepestInternalNode[0], "NumberOfRepetitionsOfLongestRepeatingSubcircuit": deepestInternalNode[1] }
 

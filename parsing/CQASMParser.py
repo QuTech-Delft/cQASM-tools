@@ -317,6 +317,9 @@ def parseCQASMFile(filename: str, **args):
     with open(filename, 'r') as reader:
         return parser.parse(reader.read(), debug=debug, **args)
 
+def parseCQASMString(s: str, **args):
+    return parser.parse(s, debug=debug, **args)
+
 if __name__ == "__main__":
     result = parseCQASMFile("test.qasm")
 
