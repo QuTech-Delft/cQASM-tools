@@ -9,7 +9,7 @@ from threading import Lock
 OUTPUT_FILE = os.path.dirname(os.path.realpath(__file__)) + "/result.csv"
 
 
-MAX_NUM_LINES = 45
+MAX_NUM_LINES = 60
 files = []
 
 for f in glob.glob(os.path.dirname(os.path.realpath(__file__)) + "/metrics/data/*.qasm"):
@@ -42,39 +42,40 @@ def writeToFile(data: dict):
         writer.writerow(data)
     
     global counter
-    print(f"Done {counter.value} / {len(files)} files")
     counter.value += 1
+    print(f"Done {counter.value} / {len(files)} files")
     lock.release()
 
 
 def processFile(fileName):
     try:
         ast = CQASMParser.parseCQASMFile(fileName)
+
+        for index, subcircuit in enumerate(ast.subcircuits):
+            repeatingSubcircuitStats = longestRepeatingSubcircuit(subcircuit.instructions)
+            lengthOfLongestRepeatingSubcircuit = len(repeatingSubcircuitStats["LongestRepeatingSubcircuit"])
+            numberOfRepetitionsOfLongestRepeatingSubcircuit = repeatingSubcircuitStats["NumberOfRepetitionsOfLongestRepeatingSubcircuit"]
+
+            pathStats = getPathStats(subcircuit.instructions)
+
+            thisSubcircuitData = {
+                "FileName": os.path.basename(fileName),
+                "SubcircuitIndex": index,
+                "LengthOfLongestRepeatingSubcircuit": lengthOfLongestRepeatingSubcircuit,
+                "NumberOfRepetitionsOfLongestRepeatingSubcircuit": numberOfRepetitionsOfLongestRepeatingSubcircuit,
+                "NumberOfGatesInCriticalPath": pathStats["NumberOfGatesInCriticalPath"],
+                "MaxNumberOfTwoQubitGatesInCriticalPath": pathStats["MaxNumberOfTwoQubitGatesInCriticalPath"],
+                "NumberOfCriticalPaths": pathStats["NumberOfCriticalPaths"],
+                "NumberOfCriticalPathsWithMaxTwoQubitsGates": pathStats["NumberOfCriticalPathsWithMaxTwoQubitsGates"],
+                "PathLengthMean": pathStats["PathLengthMean"],
+                "PathLengthStandardDeviation": pathStats["PathLengthStandardDeviation"],
+            }
+
+            writeToFile(thisSubcircuitData)
+        
     except Exception as e:
         print(f"File {fileName} gave error: {e}")
         return
-
-    for index, subcircuit in enumerate(ast.subcircuits):
-        repeatingSubcircuitStats = longestRepeatingSubcircuit(subcircuit.instructions)
-        lengthOfLongestRepeatingSubcircuit = len(repeatingSubcircuitStats["LongestRepeatingSubcircuit"])
-        numberOfRepetitionsOfLongestRepeatingSubcircuit = repeatingSubcircuitStats["NumberOfRepetitionsOfLongestRepeatingSubcircuit"]
-
-        pathStats = getPathStats(subcircuit.instructions)
-
-        thisSubcircuitData = {
-            "FileName": os.path.basename(fileName),
-            "SubcircuitIndex": index,
-            "LengthOfLongestRepeatingSubcircuit": lengthOfLongestRepeatingSubcircuit,
-            "NumberOfRepetitionsOfLongestRepeatingSubcircuit": numberOfRepetitionsOfLongestRepeatingSubcircuit,
-            "NumberOfGatesInCriticalPath": pathStats["NumberOfGatesInCriticalPath"],
-            "MaxNumberOfTwoQubitGatesInCriticalPath": pathStats["MaxNumberOfTwoQubitGatesInCriticalPath"],
-            "NumberOfCriticalPaths": pathStats["NumberOfCriticalPaths"],
-            "NumberOfCriticalPathsWithMaxTwoQubitsGates": pathStats["NumberOfCriticalPathsWithMaxTwoQubitsGates"],
-            "PathLengthMean": pathStats["PathLengthMean"],
-            "PathLengthStandardDeviation": pathStats["PathLengthStandardDeviation"],
-        }
-
-        writeToFile(thisSubcircuitData)
 
 
 if __name__ == "__main__":
@@ -83,6 +84,9 @@ if __name__ == "__main__":
     with open(OUTPUT_FILE, "w") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=statistics)
         writer.writeheader()
+    
+    # for f in files:
+    #     processFile(f)
     
     with Pool(8, initargs = (counter, )) as p:
         p.map(processFile, files)
