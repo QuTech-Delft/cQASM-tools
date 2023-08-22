@@ -5,6 +5,8 @@ import statistics
 import numpy as np
 import math
 from timeit import default_timer as timer
+from dataclasses import dataclass
+from decimal import Decimal
 
 def buildDDG(c: list[CQASMParser.Instruction]):
     start = timer()
@@ -51,65 +53,111 @@ def buildDDG(c: list[CQASMParser.Instruction]):
 
     return graph
 
-def weighted_avg_and_std(values, weights):
-    average = np.average(values, weights=weights)
-    variance = np.average((values - average)**2, weights=weights)
-    return (average, math.sqrt(variance))
+@dataclass
+class PropagatedData:
+    numberOfPaths: int
+    meanLengthOfPath: Decimal
+    varianceLengthOfPath: Decimal
+    maxLengthOfPath: int
+    numberOfPathsWithMaxLength: int
+    maxNumberOfTwoQubitGatesInPathsWithMaxLength: int
+    numberOfPathsWithMaxLengthWithMaxNumberOfTwoQubitGates: int
+
+def getParentMean(graph, parent, nodesData, parentPathCount):
+    acc = 0
+    for n in graph.successors(parent):
+        acc += nodesData[n].numberOfPaths * (nodesData[n].meanLengthOfPath + 1)
+    return Decimal(acc) / Decimal(parentPathCount)
+
+def getParentVariance(graph, parent, nodesData, parentPathCount, parentMean):
+    acc = 0
+    for n in graph.successors(parent):
+        acc += nodesData[n].numberOfPaths * (nodesData[n].varianceLengthOfPath + ((nodesData[n].meanLengthOfPath + 1) - parentMean)**2)
+    return Decimal(acc) / Decimal(parentPathCount)
+
+def getParentMaxLengthOfPath(graph, parent, nodesData):
+    maxLengthOfChildrenPath = max(nodesData[n].maxLengthOfPath for n in graph.successors(parent))
+    parentNumberOfPathsWithMaxLength = sum(nodesData[n].numberOfPathsWithMaxLength for n in graph.successors(parent) if nodesData[n].maxLengthOfPath == maxLengthOfChildrenPath)
+
+    return (maxLengthOfChildrenPath + 1, parentNumberOfPathsWithMaxLength)
+
+def twoQubitGates(graph, parent, nodesData, parentMaxLengthOfPath):
+    maxNumberOfTwoQubitGatesInPathsWithMaxLength = max(nodesData[n].maxNumberOfTwoQubitGatesInPathsWithMaxLength for n in graph.successors(parent))
+
+    numberOfPathsWithMaxLengthWithMaxNumberOfTwoQubitGates = sum(nodesData[n].numberOfPathsWithMaxLengthWithMaxNumberOfTwoQubitGates for n in graph.successors(parent) if nodesData[n].maxLengthOfPath == (parentMaxLengthOfPath - 1) and nodesData[n].maxNumberOfTwoQubitGatesInPathsWithMaxLength == maxNumberOfTwoQubitGatesInPathsWithMaxLength)
+
+    numberOfQubitOperands = 0 if isinstance(parent, str) else sum(1 for op in parent[1].operands if isinstance(op, CQASMParser.Qubit))
+    assert numberOfQubitOperands <= 2, "contains a 3+ qubits gate"
+    if numberOfQubitOperands == 2:
+        maxNumberOfTwoQubitGatesInPathsWithMaxLength += 1
+    
+    return (maxNumberOfTwoQubitGatesInPathsWithMaxLength, numberOfPathsWithMaxLengthWithMaxNumberOfTwoQubitGates)
+    
+
+def pathStatistics(graph):
+    reversedGraphView = graph.reverse(copy=False)
+
+    nodesData = { "SINK": PropagatedData(
+                numberOfPaths = 1,
+                meanLengthOfPath = Decimal(-1),
+                varianceLengthOfPath = Decimal(0),
+                maxLengthOfPath = 0,
+                numberOfPathsWithMaxLength = 1,
+                maxNumberOfTwoQubitGatesInPathsWithMaxLength = 0,
+                numberOfPathsWithMaxLengthWithMaxNumberOfTwoQubitGates = 1,
+            )
+        }
+
+    for node in networkx.topological_sort(reversedGraphView):
+        if node == "SINK":
+            continue
+
+        assert(node not in nodesData)
+
+        numberOfPaths = sum(nodesData[s].numberOfPaths for s in graph.successors(node))
+        meanLengthOfPath = getParentMean(graph, node, nodesData, numberOfPaths)
+        varianceLengthOfPath = getParentVariance(graph, node, nodesData, numberOfPaths, meanLengthOfPath)
+        maxLengthOfPath, numberOfPathsWithMaxLength = getParentMaxLengthOfPath(graph, node, nodesData)
+
+        (maxNumberOfTwoQubitGatesInPathsWithMaxLength, numberOfPathsWithMaxLengthWithMaxNumberOfTwoQubitGates) = twoQubitGates(graph, node, nodesData, maxLengthOfPath)
+
+        assert(numberOfPathsWithMaxLengthWithMaxNumberOfTwoQubitGates <= numberOfPathsWithMaxLength)
+
+        nodesData[node] = PropagatedData(
+                numberOfPaths = numberOfPaths,
+                meanLengthOfPath = meanLengthOfPath,
+                varianceLengthOfPath = varianceLengthOfPath,
+                maxLengthOfPath = maxLengthOfPath,
+                numberOfPathsWithMaxLength = numberOfPathsWithMaxLength,
+                maxNumberOfTwoQubitGatesInPathsWithMaxLength = maxNumberOfTwoQubitGatesInPathsWithMaxLength,
+                numberOfPathsWithMaxLengthWithMaxNumberOfTwoQubitGates = numberOfPathsWithMaxLengthWithMaxNumberOfTwoQubitGates,
+            )
+
+    return nodesData["SOURCE"]
+
+
 
 def getPathStats(c: list[CQASMParser.Instruction]):
     graph = buildDDG(c)
 
-    allSimplePaths = lambda: networkx.all_simple_paths(graph, "SOURCE", "SINK")
-
-    distro = {}
-    n = 0
-    for p in allSimplePaths():
-        n += 1
-        if n % 1000 == 0:
-            print(f"Processed {n} paths")
-        l = len(p) - 2
-        if l in distro:
-            distro[l] += 1
-        else:
-            distro[l] = 1
-    
-    criticalPathLengthInGates = networkx.dag_longest_path_length(graph) - 1 # This is in number of gates. dag_longest_path_length returns number of edges.
-
-    criticalPaths = lambda: filter(lambda path: len(path) - 2 == criticalPathLengthInGates, allSimplePaths())
-
-    def numberOfTwoQubitsGates(path):
-        result = 0
-        for node in path:
-            if isinstance(node, str):
-                continue
-            gate = node[1]
-            assert(isinstance(gate, CQASMParser.Gate))
-            if len(list(filter(lambda op: isinstance(op, CQASMParser.Qubit), gate.operands))) == 2:
-                result += 1
-        return result
-
-    maxNumberOfTwoQubitGatesInCriticalPaths = max(numberOfTwoQubitsGates(path) for path in criticalPaths())
-    numberOfCriticalPaths = sum(1 for _ in criticalPaths())
-    numberOfCriticalPathsWithMaxTwoQubitsGates = sum(1 for _ in filter(lambda path: numberOfTwoQubitsGates(path) == maxNumberOfTwoQubitGatesInCriticalPaths, criticalPaths()))
-
-    mean, std = weighted_avg_and_std(list(distro.keys()), list(distro.values()))
+    stats = pathStatistics(graph)
 
     return {
-        "NumberOfGatesInCriticalPath": criticalPathLengthInGates, # This removes SOURCE and SINK
-        "MaxNumberOfTwoQubitGatesInCriticalPath": maxNumberOfTwoQubitGatesInCriticalPaths,
-        "NumberOfCriticalPaths": numberOfCriticalPaths,
-        "NumberOfCriticalPathsWithMaxTwoQubitsGates": numberOfCriticalPathsWithMaxTwoQubitsGates,
-        "PathLengthMean": mean,
-        "PathLengthStandardDeviation": std,
+        "NumberOfGatesInCriticalPath": stats.maxLengthOfPath - 1,
+        "MaxNumberOfTwoQubitGatesInCriticalPath": stats.maxNumberOfTwoQubitGatesInPathsWithMaxLength,
+        "NumberOfCriticalPaths": stats.numberOfPathsWithMaxLength,
+        "NumberOfCriticalPathsWithMaxTwoQubitsGates": stats.numberOfPathsWithMaxLengthWithMaxNumberOfTwoQubitGates,
+        "PathLengthMean": stats.meanLengthOfPath,
+        "PathLengthStandardDeviation": stats.varianceLengthOfPath.sqrt(),
     }
 
 
 def checkSame(a, b):
-    floatKeys = {"PathLengthMean", "PathLengthStandardDeviation"}
-    for k in floatKeys:
-        assert(abs(a[k] - b[k]) < 0.00000001)
+    decimalKeys = {"PathLengthMean", "PathLengthStandardDeviation"}
+    for k in decimalKeys:
+        assert(abs(a[k] - b[k]) < Decimal(0.00000001))
 
-    assert(list(v for k, v in a.items() if k not in floatKeys) == list(v for k, v in b.items() if k not in floatKeys)) 
+    assert(list(v for k, v in a.items() if k not in decimalKeys) == list(v for k, v in b.items() if k not in decimalKeys)) 
 
 def test1():
     cq = """
@@ -132,10 +180,9 @@ qubits 3
         "MaxNumberOfTwoQubitGatesInCriticalPath": 2,
         "NumberOfCriticalPaths": 1,
         "NumberOfCriticalPathsWithMaxTwoQubitsGates": 1,
-        "PathLengthMean": 3.5,
-        "PathLengthStandardDeviation": 0.5,
+        "PathLengthMean": Decimal(3.5),
+        "PathLengthStandardDeviation": Decimal(0.5),
     }
-    print(output)
     checkSame(output, expected)
 
 def test2():
@@ -157,8 +204,8 @@ qubits 4
         "MaxNumberOfTwoQubitGatesInCriticalPath": 3,
         "NumberOfCriticalPaths": 1,
         "NumberOfCriticalPathsWithMaxTwoQubitsGates": 1,
-        "PathLengthMean": 3,
-        "PathLengthStandardDeviation": 0,
+        "PathLengthMean": Decimal(3),
+        "PathLengthStandardDeviation": Decimal(0),
     }
 
     checkSame(output, expected)
@@ -183,8 +230,8 @@ qubits 4
         "MaxNumberOfTwoQubitGatesInCriticalPath": 0,
         "NumberOfCriticalPaths": 1,
         "NumberOfCriticalPathsWithMaxTwoQubitsGates": 1, # There are no paths with 2q gates.
-        "PathLengthMean": 1.5,
-        "PathLengthStandardDeviation": 0.5,
+        "PathLengthMean": Decimal(1.5),
+        "PathLengthStandardDeviation": Decimal(0.5),
     }
 
     checkSame(output, expected)
@@ -267,8 +314,38 @@ qubits 3
     print(getPathStats(CQASMParser.parseCQASMString(cq).subcircuits[0].instructions))
 
 
+def test5():
+    cq = """
+    version 1.0
+
+qubits 3
+
+.testCircuit
+  h q[0]
+  h q[1]
+  h q[2]
+  cnot q[0], q[1]
+  cnot q[1], q[2]
+  h q[0]
+"""
+
+    output = getPathStats(CQASMParser.parseCQASMString(cq).subcircuits[0].instructions)
+
+    expected = {
+        "NumberOfGatesInCriticalPath": 3,
+        "MaxNumberOfTwoQubitGatesInCriticalPath": 2,
+        "NumberOfCriticalPaths": 4,
+        "NumberOfCriticalPathsWithMaxTwoQubitsGates": 2,
+        "PathLengthMean": Decimal(2.8),
+        "PathLengthStandardDeviation": Decimal(0.4),
+    }
+
+    checkSame(output, expected)
+
+
 if __name__ == "__main__":
     test1()
     test2()
     test3()
     test4()
+    test5()

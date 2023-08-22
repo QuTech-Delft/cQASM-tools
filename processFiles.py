@@ -9,14 +9,16 @@ from threading import Lock
 OUTPUT_FILE = os.path.dirname(os.path.realpath(__file__)) + "/result.csv"
 
 
-MAX_NUM_LINES = 60
-files = []
+# MAX_NUM_LINES = 99999
+# files = []
 
-for f in glob.glob(os.path.dirname(os.path.realpath(__file__)) + "/metrics/data/*.qasm"):
-    num_lines = sum(1 for _ in open(f))
+# for f in glob.glob(os.path.dirname(os.path.realpath(__file__)) + "/metrics/data/*.qasm"):
+#     num_lines = sum(1 for _ in open(f))
 
-    if num_lines <= MAX_NUM_LINES:
-        files.append(f)
+#     if num_lines <= MAX_NUM_LINES:
+#         files.append(f)
+
+files = glob.glob(os.path.dirname(os.path.realpath(__file__)) + "/metrics/data/*.qasm")
 
 lock = Lock()
 counter = Value('i', 0)
@@ -74,9 +76,9 @@ def processFile(fileName):
             writeToFile(thisSubcircuitData)
         
     except Exception as e:
-        print(f"File {fileName} gave error: {e}")
+        print(f"File {fileName} gave error: {e} and was not processed")
+        lock.release()
         return
-
 
 if __name__ == "__main__":
     print(f"Will process files: {files}")
