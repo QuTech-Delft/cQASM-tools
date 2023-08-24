@@ -43,7 +43,7 @@ def t_QUBITS(t):
     return t
 
 def t_IDENTIFIER(t):
-    r'[a-zA-Z_][a-zA-Z_0-9]*'
+    r'[a-zA-Z_][=a-zA-Z_0-9]*'
     t.type = reserved_keywords.get(t.value,'IDENTIFIER')
     return t
 
@@ -323,24 +323,6 @@ def parseCQASMString(s: str, **args):
     return parser.parse(s, debug=debug, **args)
 
 if __name__ == "__main__":
-    result = parseCQASMFile("test.qasm")
+    result = parseCQASMFile("/shares/bulk/plehenaff/cQASM-tools/metrics/data/Cuccaro_adder_8.qasm")
 
-    for subcircuit in result.subcircuits:
-        print(f"subcircuit {subcircuit.name}")
-        for instruction in subcircuit.instructions:
-            if instruction.name == "h":
-                print(f"it's a hadamard operating on {', '.join(map(str, instruction.operands))}")
-                print(f"it's controlled by {instruction.controlBits}")
-
-                for op in instruction.operands:
-                    if isinstance(op, Qubit):
-                        print(f"qubit operand {op}")
-                    if isinstance(op, Qubits):
-                        print("Not needed")
-                    if isinstance(op, Literal):
-                        print(f"rotation of angle {op}")
-
-            else:
-                print("it's not a hadamard")
-
-    # print(result)
+    print(result)
