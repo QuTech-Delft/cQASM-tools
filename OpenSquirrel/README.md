@@ -1,5 +1,15 @@
 ### Mini-compiler for Quantum Inspire's quantum chip
 
+ ,;;:;,
+   ;;;;;
+  ,:;;:;    ,'=.
+  ;:;:;' .=" ,'_\
+  ':;:;,/  ,__:=@
+   ';;:;  =./)_
+ jgs `"=\_  )_"`
+          ``'"`
+
+
 For current status, see docstring in the entrypoint `Compile.py`.
 
 # pip dependencies (among others): `numpy`, `antlr4-tools`
