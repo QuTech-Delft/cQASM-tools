@@ -1,4 +1,4 @@
-### Mini-compiler for Quantum Inspire's quantum chip
+### Mini-compiler for Quantum Inspire's quantum chip[munks]
 
 ```
  ,;;:;,
