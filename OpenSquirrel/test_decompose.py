@@ -1,10 +1,60 @@
 from Compile import compile
+from TestInterpreter import getCircuitMatrix
+from Common import ATOL
 import unittest
+import numpy as np
 
 ### TODO: add more tests, possibly with randomized unitaries and circuits, and simulate to check equivalence modulo global phase?
 
 
 class DecomposeTests(unittest.TestCase):
+    def checkCompilationPreservesCircuitMatrix(self, cqasm_string):
+        compiled_circuit_string = compile(cqasm_string)
+        
+        actualMatrix = getCircuitMatrix(compiled_circuit_string)
+        expectedMatrix = getCircuitMatrix(cqasm_string)
+
+        firstNonZero = next((i, j) for i in range(actualMatrix.shape[0]) for j in range(actualMatrix.shape[1]) if abs(actualMatrix[i, j]) > ATOL)
+        assert(abs(expectedMatrix[firstNonZero]) > ATOL)
+        phaseDifference = actualMatrix[firstNonZero] / expectedMatrix[firstNonZero]
+
+        assert(np.allclose(actualMatrix, phaseDifference * expectedMatrix))
+
+    def test_one(self):
+        cqasm = r"""
+version 3.0
+
+qubit[2] squirrel
+
+// iuwhefjwn
+
+/* This is a multi-
+        line comment block */
+
+ry squirrel[0], 23847628349.123
+rx squirrel[0], 29384672.234
+rz squirrel[0], 9877.87634
+"""
+
+        self.checkCompilationPreservesCircuitMatrix(cqasm)
+
+    def test_two(self):
+        cqasm = r"""
+version 3.0
+
+qubit[2] squirrel
+
+ry squirrel[0], 23847628349.123
+cnot squirrel[0], squirrel[1]
+rx squirrel[1], 29384672.234
+rz squirrel[0], 9877.87634
+cnot squirrel[0], squirrel[1]
+rx squirrel[1], 29384672.234
+rz squirrel[0], 9877.87634
+"""
+
+        self.checkCompilationPreservesCircuitMatrix(cqasm)
+
     def test_random(self):
         cqasm = r"""
         version 3.0

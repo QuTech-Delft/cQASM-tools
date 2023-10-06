@@ -1,9 +1,7 @@
 from math import acos, cos, sin, atan2, pi, sqrt
 from GeneratedParsingCode import CQasm3Visitor
-from Common import GATES, ExprType, ArgType, Parameter
+from Common import ATOL, GATES, ExprType, ArgType, Parameter
 import numpy as np
-
-ATOL = 0.000001
 
 def normalizeAngle(x):
       t = x - 2 * pi * (x // (2 * pi) + 1)
