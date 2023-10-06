@@ -1,4 +1,4 @@
-import math
+import math, cmath
 from enum import Enum
 import numpy as np
 
@@ -160,10 +160,6 @@ GATES = {
         "signature": (ArgType.QUBIT, ArgType.QUBIT, ArgType.FLOAT),
     },
 }
-
-import numpy as np
-import unittest
-import math, cmath, scipy
 
 X = np.array([[0, 1], [1, 0]])
 Y = np.array([[0, -1j], [1j, 0]])

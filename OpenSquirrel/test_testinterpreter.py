@@ -3,8 +3,7 @@ import unittest
 import numpy as np
 import math
 
-### TODO: add more tests, possibly with randomized unitaries and circuits, and simulate to check equivalence modulo global phase?
-
+# Careful: getCircuitMatrix doesn't run type-checking
 
 class TestInterpreterTest(unittest.TestCase):
     def test_hadamard(self):
