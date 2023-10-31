@@ -1,5 +1,5 @@
 import typing
-from Common import ArgType
+from src.Common import ArgType
 import numpy as np
 
 class Semantic:

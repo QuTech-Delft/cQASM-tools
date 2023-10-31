@@ -1,8 +1,8 @@
 from math import acos, cos, sin, atan2, pi, sqrt
-from GeneratedParsingCode import CQasm3Visitor
-from Common import ATOL, ExprType, ArgType, Parameter
-from SquirrelAST import SquirrelAST
-from Gates import SingleQubitAxisAngleSemantic, queryEntry, querySignature, querySemantic
+from parsing.GeneratedParsingCode import CQasm3Visitor
+from src.Common import ATOL, ExprType, ArgType, Parameter
+from src.SquirrelAST import SquirrelAST
+from src.Gates import SingleQubitAxisAngleSemantic, queryEntry, querySignature, querySemantic
 import numpy as np
 
 def normalizeAngle(x):

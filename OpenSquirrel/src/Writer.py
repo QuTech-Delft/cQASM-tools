@@ -1,5 +1,5 @@
-from Common import ArgType
-from Gates import querySignature
+from src.Common import ArgType
+from src.Gates import querySignature
 
 class Writer:
     def __init__(self, gates):

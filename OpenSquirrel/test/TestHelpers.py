@@ -1,4 +1,4 @@
-from Common import ATOL
+from src.Common import ATOL
 import numpy as np
 
 def areMatricesEqualUpToGlobalPhase(matrixA, matrixB):

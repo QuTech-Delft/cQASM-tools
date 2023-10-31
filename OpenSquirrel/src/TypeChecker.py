@@ -1,6 +1,6 @@
-from GeneratedParsingCode import CQasm3Visitor
-from Common import ExprType, ArgType, exprTypeToArgType
-from Gates import querySignature
+from parsing.GeneratedParsingCode import CQasm3Visitor
+from src.Common import ExprType, ArgType, exprTypeToArgType
+from src.Gates import querySignature
 
 class TypeChecker(CQasm3Visitor.CQasm3Visitor):
     def __init__(self, gates):

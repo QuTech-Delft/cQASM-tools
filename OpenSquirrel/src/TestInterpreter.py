@@ -1,6 +1,6 @@
-from Common import ArgType
-from MatrixExpander import getBigMatrix
-from Gates import querySignature, querySemantic
+from src.Common import ArgType
+from src.MatrixExpander import getBigMatrix
+from src.Gates import querySignature, querySemantic
 import numpy as np
 
 class TestInterpreter:

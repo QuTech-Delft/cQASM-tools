@@ -1,7 +1,7 @@
 import unittest
-from TestGates import TEST_GATES
-from SquirrelAST import SquirrelAST
-from Writer import Writer
+from test.TestGates import TEST_GATES
+from src.SquirrelAST import SquirrelAST
+from src.Writer import Writer
 
 class WriterTest(unittest.TestCase):
     def test_write(self):

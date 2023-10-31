@@ -1,7 +1,7 @@
-from Common import ArgType, Parameter
+from src.Common import ArgType, Parameter
 import numpy as np
 import math
-from Gates import SingleQubitAxisAngleSemantic, MultiQubitMatrixSemantic
+from src.Gates import SingleQubitAxisAngleSemantic, MultiQubitMatrixSemantic
 
 TEST_GATES = {
     "h": {

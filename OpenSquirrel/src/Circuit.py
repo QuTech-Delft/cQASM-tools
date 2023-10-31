@@ -1,12 +1,12 @@
-from GeneratedParsingCode import CQasm3Parser
-from GeneratedParsingCode import CQasm3Lexer
-from GeneratedParsingCode import CQasm3Visitor
-from TypeChecker import TypeChecker
-from McKayDecomposer import McKayDecomposer
-from SquirrelErrorHandler import SquirrelErrorHandler
-from SquirrelASTCreator import SquirrelASTCreator
-from TestInterpreter import TestInterpreter
-from Writer import Writer
+from parsing.GeneratedParsingCode import CQasm3Parser
+from parsing.GeneratedParsingCode import CQasm3Lexer
+from parsing.GeneratedParsingCode import CQasm3Visitor
+from src.TypeChecker import TypeChecker
+from src.McKayDecomposer import McKayDecomposer
+from src.SquirrelErrorHandler import SquirrelErrorHandler
+from src.SquirrelASTCreator import SquirrelASTCreator
+from src.TestInterpreter import TestInterpreter
+from src.Writer import Writer
 import antlr4
 
 class Circuit:

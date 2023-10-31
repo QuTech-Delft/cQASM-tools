@@ -1,11 +1,11 @@
 import unittest
-from TestGates import TEST_GATES
-from SquirrelASTCreator import SquirrelASTCreator
-from GeneratedParsingCode import CQasm3Parser
-from GeneratedParsingCode import CQasm3Lexer
-from GeneratedParsingCode import CQasm3Visitor
-from TypeChecker import TypeChecker
-from SquirrelErrorHandler import SquirrelErrorHandler, SquirrelParseException
+from test.TestGates import TEST_GATES
+from src.SquirrelASTCreator import SquirrelASTCreator
+from parsing.GeneratedParsingCode import CQasm3Parser
+from parsing.GeneratedParsingCode import CQasm3Lexer
+from parsing.GeneratedParsingCode import CQasm3Visitor
+from src.TypeChecker import TypeChecker
+from src.SquirrelErrorHandler import SquirrelErrorHandler, SquirrelParseException
 import antlr4
 
 class ParsingTest(unittest.TestCase):

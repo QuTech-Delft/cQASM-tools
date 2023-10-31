@@ -1,7 +1,7 @@
 
-from Gates import SingleQubitAxisAngleSemantic, MultiQubitMatrixSemantic
+from src.Gates import SingleQubitAxisAngleSemantic, MultiQubitMatrixSemantic
 import numpy as np
-from Common import Can1
+from src.Common import Can1
 
 # This should only be used for testing and on circuits with low number of qubits.
 def getBigMatrix(semantic, qubitOperands, totalQubits):

@@ -1,5 +1,5 @@
-from Circuit import Circuit
-from TestGates import TEST_GATES
+from src.Circuit import Circuit
+from test.TestGates import TEST_GATES
 import unittest
 import numpy as np
 import math

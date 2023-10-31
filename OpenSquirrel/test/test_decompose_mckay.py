@@ -1,7 +1,7 @@
-from Circuit import Circuit
-from Common import ATOL
-from TestGates import TEST_GATES
-from TestHelpers import areMatricesEqualUpToGlobalPhase
+from src.Circuit import Circuit
+from src.Common import ATOL
+from test.TestGates import TEST_GATES
+from test.TestHelpers import areMatricesEqualUpToGlobalPhase
 import unittest
 import numpy as np
 
