@@ -26,7 +26,7 @@ output: a cQasm 3.0 string, corresponding to the compiled circuit
          * does not support map or variables
          * all one-qubit gates are merged together, without attempting to commute any gate
          * two-or-more-qubit gates are left as-is
-         * merged one-qubit gates are decomposed according to Kay decomposition, that is:
+         * merged one-qubit gates are decomposed according to McKay decomposition, that is:
                    gate   ---->    Rz.Rx(pi/2).Rz.Rx(pi/2).Rz
          * _global phase is deemed irrelevant_, therefore a simulator backend might produce different output
             for the input and output circuit - those outputs should be equivalent modulo global phase.
