@@ -66,8 +66,8 @@ class TypeChecker(CQasm3Visitor.CQasm3Visitor):
         if str(ctx.ID()) != self.registerName:
           raise Exception(f"Qubit register {str(ctx.ID())} not declared")
         
-        qubitIndex1 = int(str(ctx.INT(1)))
-        qubitIndex2 = int(str(ctx.INT(2)))
+        qubitIndex1 = int(str(ctx.INT(0)))
+        qubitIndex2 = int(str(ctx.INT(1)))
         if (max(qubitIndex1, qubitIndex2) >= self.nQubits):
           raise Exception(f"Qubit indices {qubitIndex1}:{qubitIndex2} out of range")
 
