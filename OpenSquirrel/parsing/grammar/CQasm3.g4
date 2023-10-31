@@ -2,20 +2,19 @@ grammar CQasm3;
 
 stateSep: ( ';' | '\r\n' | '\n' )+ ;
 
-prog:   stateSep? VERSION '3.0' stateSep qubitRegisterDeclaration (stateSep gateApplication)* stateSep? EOF
-    ;
+prog:   stateSep? VERSION '3.0' stateSep qubitRegisterDeclaration (stateSep gateApplication)* stateSep? EOF ;
 
-qubitRegisterDeclaration: 'qubit[' INT ']' ID;
+qubitRegisterDeclaration: 'qubit[' INT ']' ID ;
 
-gateApplication: ID expr (',' expr)*;
+gateApplication: ID expr (',' expr)* ;
 
-expr:     ID '[' INT ']'                      # Qubit
-      |   ID '[' INT (',' INT )* ']'              # Qubits
-      |   ID '[' INT ':' INT ']'              # QubitRange
+expr:     ID '[' INT ']'                    # Qubit
+      |   ID '[' INT (',' INT )* ']'        # Qubits
+      |   ID '[' INT ':' INT ']'            # QubitRange
       |   INT                               # IntLiteral
-      |   '-' INT                               # NegatedIntLiteral
+      |   '-' INT                           # NegatedIntLiteral
       |   FLOAT                             # FloatLiteral
-      |   '-' FLOAT                             # NegatedFloatLiteral
+      |   '-' FLOAT                         # NegatedFloatLiteral
       ;
 
 VERSION: 'version' ;
