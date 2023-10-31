@@ -11,7 +11,7 @@
           ``'"`
 ```
 
-For current status, see docstring in the entrypoint `Compile.py`.
+For current status, see docstring in the entrypoint `Circuit.py`.
 
 pip dependencies (among others): `numpy`, `antlr4-tools`
 

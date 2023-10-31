@@ -1,9 +1,10 @@
 from GeneratedParsingCode import CQasm3Visitor
-import Common
 from Common import ExprType, ArgType, exprTypeToArgType
+from Gates import querySignature
 
 class TypeChecker(CQasm3Visitor.CQasm3Visitor):
-    def __init__(self):
+    def __init__(self, gates):
+        self.gates = gates
         self.nQubits = 0
 
     def visitProg(self, ctx):
@@ -18,10 +19,10 @@ class TypeChecker(CQasm3Visitor.CQasm3Visitor):
     def visitGateApplication(self, ctx):
         # Check that the type of operands match the gate declaration
         gateName = str(ctx.ID())
-        if gateName not in Common.GATES:
+        if gateName not in self.gates:
             raise Exception(f"Unknown gate {gateName}")
 
-        expectedSignature = Common.GATES[gateName]["signature"]
+        expectedSignature = querySignature(self.gates, gateName)
 
         if len(ctx.expr()) != len(expectedSignature):
             raise Exception(f"Gate {gateName} takes {len(expectedSignature)} arguments, but {len(ctx.expr())} were given!")

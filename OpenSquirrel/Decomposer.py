@@ -1,6 +1,8 @@
 from math import acos, cos, sin, atan2, pi, sqrt
 from GeneratedParsingCode import CQasm3Visitor
-from Common import ATOL, GATES, ExprType, ArgType, Parameter
+from Common import ATOL, ExprType, ArgType, Parameter
+from SquirrelAST import SquirrelAST
+from Gates import SingleQubitAxisAngleSemantic, queryEntry, querySignature, querySemantic
 import numpy as np
 
 def normalizeAngle(x):
@@ -11,16 +13,14 @@ def normalizeAngle(x):
         t -= 2 * pi
       return t
 
-def normalize(axis):
-  norm = np.linalg.norm(axis)
-  axis /= norm
+class Decomposer:
+  def __init__(self, gates):
+    self.gates = gates
 
-class Decomposer(CQasm3Visitor.CQasm3Visitor):
-  def __init__(self):
-    self.oneQubitGates = {}
-    self.output = ""
+    queryEntry(self.gates, "rz") # FIXME: improve. Pass those gates as parameters to the constructor.
+    queryEntry(self.gates, "x90")
 
-  def decomposeAndAdd(self, qubit, angle, axis):
+  def _decomposeAndAdd(self, qubit, angle, axis):
     if abs(angle) < ATOL:
       return
     
@@ -42,34 +42,31 @@ class Decomposer(CQasm3Visitor.CQasm3Visitor):
     theta = normalizeAngle(theta)
 
     if abs(lam) > ATOL:
-      self.output += f'''rz q[{qubit}], {lam}\n'''
+      self.output.addGate("rz", qubit, lam)
 
-    self.output += f'''x90 q[{qubit}]\n'''
+    self.output.addGate("x90", qubit)
     
     if abs(theta) > ATOL:
-      self.output += f'''rz q[{qubit}], {theta}\n'''
+      self.output.addGate("rz", qubit, theta)
     
-    self.output += f'''x90 q[{qubit}]\n'''
+    self.output.addGate("x90", qubit)
 
     if abs(phi) > ATOL:
-      self.output += f'''rz q[{qubit}], {phi}\n'''
+      self.output.addGate("rz", qubit, phi)
 
 
-  def flush(self, q):
+  def _flush(self, q):
     if q not in self.oneQubitGates:
       return
     p = self.oneQubitGates.pop(q)
-    self.decomposeAndAdd(q, p['angle'], p['axis'])
+    self._decomposeAndAdd(q, p['angle'], p['axis'])
 
-  def flushAll(self):
-    for q, p in self.oneQubitGates.items():
-      self.decomposeAndAdd(q, p['angle'], p['axis'])
+  def _flush_all(self):
+    while(len(self.oneQubitGates) > 0):
+      self._flush(next(iter(self.oneQubitGates.keys())))
 
-    self.oneQubitGates = {}
-
-  def acc(self, qubit, angle, axis, phase):
-    axis = np.array(axis).astype(np.float64)
-    normalize(axis)
+  def _acc(self, qubit, semantic: SingleQubitAxisAngleSemantic):
+    axis, angle, phase = semantic.axis, semantic.angle, semantic.phase
 
     if qubit not in self.oneQubitGates:
       self.oneQubitGates[qubit] = {"angle": angle, "axis": axis, "phase": phase}
@@ -94,72 +91,35 @@ class Decomposer(CQasm3Visitor.CQasm3Visitor):
 
     self.oneQubitGates[qubit] = {"angle": combinedAngle, "axis": combinedAxis, "phase": combinedPhase}
 
-  def visitProg(self, ctx):
-      qubitRegisterName, nQubits = self.visit(ctx.qubitRegisterDeclaration())
-      self.output += f'''version 3.0\n\nqubit[{nQubits}] {qubitRegisterName}\n\n'''
+  def process(self, squirrelAST):
+    self.output = SquirrelAST(self.gates, squirrelAST.nQubits, squirrelAST.qubitRegisterName)
+    self.oneQubitGates = {}
 
-      for gApp in ctx.gateApplication():
-        self.visit(gApp)
+    for operation in squirrelAST.operations:
+      self._processSingleOperation(operation)
+    
+    self._flush_all()
+    
+    return self.output # FIXME: instead of returning a new AST, modify existing one
 
-      self.flushAll()
+  def _processSingleOperation(self, operation):
+      gateName, gateArgs = operation
 
-      return self.output
-  
-  def visitQubitRegisterDeclaration(self, ctx):
-    return (str(ctx.ID()), int(str(ctx.INT())))
+      signature = querySignature(self.gates, gateName)
+      qubitArguments = [gateArgs[i] for i in range(len(gateArgs)) if signature[i] == ArgType.QUBIT]
+      nonQubitArguments = [gateArgs[i] for i in range(len(gateArgs)) if signature[i] != ArgType.QUBIT]
 
-  def extract_original_text(self, ctx):
-      token_source = ctx.start.getTokenSource()
-      input_stream = token_source.inputStream
-      start, stop  = ctx.start.start, ctx.stop.stop
-      return input_stream.getText(start, stop)
-
-  def visitGateApplication(self, ctx):
-      gateName = str(ctx.ID())
-      signatureQubitIndices = [i for i in range(len(GATES[gateName]["signature"])) if GATES[gateName]["signature"][i] == ArgType.QUBIT]
-      gateQubits = [self.visit(ctx.expr(i)) for i in signatureQubitIndices]
-
-      assert(all(len(l) == len(gateQubits[0]) for l in gateQubits))
-
-      if len(gateQubits) >= 2:
-        s = set([q for l in gateQubits for q in l])
-        [self.flush(q) for q in s]
-        self.output += f"{self.extract_original_text(ctx)}\n"
+      if len(qubitArguments) >= 2:
+        [self._flush(q) for q in qubitArguments]
+        self.output.addGate(gateName, *gateArgs)
         return
 
-      if len(gateQubits) == 0:
-        self.output += f"{self.extract_original_text(ctx)}\n"
+      if len(qubitArguments) == 0:
+        assert False, "Unsupported"
         return
-        
-      if isinstance(GATES[gateName]["angle"], Parameter):
-        angle = self.visit(ctx.expr(GATES[gateName]["angle"].value))
-      else:
-        angle = GATES[gateName]["angle"]
+      
+      semantic = querySemantic(self.gates, gateName, *nonQubitArguments)
 
-      qubitArguments = zip(*gateQubits)
-      for qubitArgument in qubitArguments:
-        assert(len(qubitArgument) == 1)
-        self.acc(qubitArgument[0], angle, GATES[gateName]["axis"], GATES[gateName]["phase"])
-
-  def visitQubit(self, ctx):
-      return [int(str(ctx.INT()))]
-
-  def visitQubits(self, ctx):
-      return list(map(int, map(str, ctx.INT())))
-
-  def visitQubitRange(self, ctx):
-      qubitIndex1 = int(str(ctx.INT(0)))
-      qubitIndex2 = int(str(ctx.INT(1)))
-      return list(range(qubitIndex1, qubitIndex2 + 1))
-
-  def visitFloatLiteral(self, ctx):
-    return float(str(ctx.FLOAT()))
-
-  def visitNegatedFloatLiteral(self, ctx):
-    return - float(str(ctx.FLOAT()))
-
-  def visitIntLiteral(self, ctx):
-    return int(str(ctx.INT()))
-
-  def visitNegatedIntLiteral(self, ctx):
-    return - int(str(ctx.INT()))
+      assert isinstance(semantic, SingleQubitAxisAngleSemantic), f"Not supported for single qubit gate {gateName}: {type(semantic)}"
+      
+      self._acc(qubitArguments[0], semantic)

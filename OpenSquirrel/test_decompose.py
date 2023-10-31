@@ -1,21 +1,28 @@
-from Compile import compile
-from TestInterpreter import getCircuitMatrix
+from Circuit import Circuit
 from Common import ATOL
+from TestGates import TEST_GATES
 import unittest
 import numpy as np
 
 class DecomposeTests(unittest.TestCase):
-    def checkCompilationPreservesCircuitMatrix(self, cqasm_string):
-        compiled_circuit_string = compile(cqasm_string)
+    def checkCompilationPreservesCircuitMatrix(self, cqasm3_string):
+        circuit = Circuit(TEST_GATES, cqasm3_string)
+
+        # Store matrix before decompositions.
+        expectedMatrix = circuit.test_get_circuit_matrix()
+
+        circuit.decompose_mckay()
+
+        compiled_circuit_string = str(circuit) # Doesn't need to test writer here...
         
-        actualMatrix = getCircuitMatrix(compiled_circuit_string)
-        expectedMatrix = getCircuitMatrix(cqasm_string)
+        # Get matrix after decompositions.
+        actualMatrix = circuit.test_get_circuit_matrix()
 
         firstNonZero = next((i, j) for i in range(actualMatrix.shape[0]) for j in range(actualMatrix.shape[1]) if abs(actualMatrix[i, j]) > ATOL)
-        assert(abs(expectedMatrix[firstNonZero]) > ATOL)
+        assert abs(expectedMatrix[firstNonZero]) > ATOL
         phaseDifference = actualMatrix[firstNonZero] / expectedMatrix[firstNonZero]
 
-        assert(np.allclose(actualMatrix, phaseDifference * expectedMatrix))
+        assert np.allclose(actualMatrix, phaseDifference * expectedMatrix)
 
     def test_one(self):
         cqasm = r"""
@@ -52,8 +59,47 @@ rz squirrel[0], 9877.87634
 
         self.checkCompilationPreservesCircuitMatrix(cqasm)
 
+    def test_smallrandom(self):
+        cqasm3 = r"""
+        version 3.0
+        qubit[4] q
+
+        H q[2]
+        cr q[2], q[3], 2.123
+        H q[1]
+        H q[0]
+        H q[2]
+        H q[1]
+        H q[0]
+        cr q[2], q[3], 2.123
+    
+"""
+
+        expected = """version 3.0
+
+qubit[4] q
+
+x90 q[2]
+rz q[2], 1.5707963267948966
+x90 q[2]
+cr q[2], q[3], 2.123
+x90 q[2]
+rz q[2], 1.5707963267948966
+x90 q[2]
+cr q[2], q[3], 2.123
+"""
+
+        circuit = Circuit(TEST_GATES, cqasm3)
+
+        circuit.decompose_mckay()
+
+        output = str(circuit)
+
+        print(output)
+        assert output == expected
+
     def test_random(self):
-        cqasm = r"""
+        cqasm3 = r"""
         version 3.0
 
         // This is a single line comment which ends on the newline.
@@ -86,14 +132,14 @@ rz squirrel[0], 9877.87634
 
 qubit[4] q
 
+x90 q[1]
+rz q[1], 1.5707963267948966
+x90 q[1]
 rz q[0], -0.20000000000000018
 x90 q[0]
 rz q[0], 1.5707963267948957
 x90 q[0]
 rz q[0], 1.5707963267949
-x90 q[1]
-rz q[1], 1.5707963267948966
-x90 q[1]
 cnot q[1], q[0]
 rz q[0], -2.352142653589793
 x90 q[0]
@@ -113,9 +159,14 @@ x90 q[1]
 rz q[1], 3.141592653589793
 """
 
-        output = compile(cqasm)
+        circuit = Circuit(TEST_GATES, cqasm3)
 
-        assert(output == expected)
+        circuit.decompose_mckay()
+
+        output = str(circuit)
+
+        print(output)
+        assert output == expected
 
 if __name__ == '__main__':
     unittest.main()
