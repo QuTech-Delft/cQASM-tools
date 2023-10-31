@@ -1,28 +1,28 @@
 from Circuit import Circuit
 from Common import ATOL
 from TestGates import TEST_GATES
+from TestHelpers import areMatricesEqualUpToGlobalPhase
 import unittest
 import numpy as np
 
-class DecomposeTests(unittest.TestCase):
-    def checkCompilationPreservesCircuitMatrix(self, cqasm3_string):
+class DecomposeMcKayTests(unittest.TestCase):
+    def checkMcKayDecomposition(self, cqasm3_string):
+        """
+            Check whether the mcKay decomposition transformation applied to the input string preserves the
+            circuit matrix up to an irrelevant global phase factor.
+        """
+
         circuit = Circuit(TEST_GATES, cqasm3_string)
 
         # Store matrix before decompositions.
         expectedMatrix = circuit.test_get_circuit_matrix()
 
         circuit.decompose_mckay()
-
-        compiled_circuit_string = str(circuit) # Doesn't need to test writer here...
         
         # Get matrix after decompositions.
         actualMatrix = circuit.test_get_circuit_matrix()
 
-        firstNonZero = next((i, j) for i in range(actualMatrix.shape[0]) for j in range(actualMatrix.shape[1]) if abs(actualMatrix[i, j]) > ATOL)
-        assert abs(expectedMatrix[firstNonZero]) > ATOL
-        phaseDifference = actualMatrix[firstNonZero] / expectedMatrix[firstNonZero]
-
-        assert np.allclose(actualMatrix, phaseDifference * expectedMatrix)
+        assert areMatricesEqualUpToGlobalPhase(actualMatrix, expectedMatrix)
 
     def test_one(self):
         cqasm = r"""
@@ -40,7 +40,7 @@ rx squirrel[0], 29384672.234
 rz squirrel[0], 9877.87634
 """
 
-        self.checkCompilationPreservesCircuitMatrix(cqasm)
+        self.checkMcKayDecomposition(cqasm)
 
     def test_two(self):
         cqasm = r"""
@@ -57,7 +57,7 @@ rx squirrel[1], 29384672.234
 rz squirrel[0], 9877.87634
 """
 
-        self.checkCompilationPreservesCircuitMatrix(cqasm)
+        self.checkMcKayDecomposition(cqasm)
 
     def test_smallrandom(self):
         cqasm3 = r"""

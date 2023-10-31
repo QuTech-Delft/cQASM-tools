@@ -13,7 +13,7 @@ def normalizeAngle(x):
         t -= 2 * pi
       return t
 
-class Decomposer:
+class McKayDecomposer:
   def __init__(self, gates):
     self.gates = gates
 

@@ -2,7 +2,7 @@ from GeneratedParsingCode import CQasm3Parser
 from GeneratedParsingCode import CQasm3Lexer
 from GeneratedParsingCode import CQasm3Visitor
 from TypeChecker import TypeChecker
-from Decomposer import Decomposer
+from McKayDecomposer import McKayDecomposer
 from SquirrelErrorHandler import SquirrelErrorHandler
 from SquirrelASTCreator import SquirrelASTCreator
 from TestInterpreter import TestInterpreter
@@ -52,8 +52,8 @@ class Circuit:
                 for the input and output circuit - those outputs should be equivalent modulo global phase.
         """
 
-        decomposer = Decomposer(self.gates)
-        self.squirrelAST = decomposer.process(self.squirrelAST)
+        mcKayDecomposer = McKayDecomposer(self.gates)
+        self.squirrelAST = mcKayDecomposer.process(self.squirrelAST)
     
     def test_get_circuit_matrix(self):
         """Get the (large) unitary matrix corresponding to the circuit.
