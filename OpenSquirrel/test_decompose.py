@@ -4,9 +4,6 @@ from Common import ATOL
 import unittest
 import numpy as np
 
-### TODO: add more tests, possibly with randomized unitaries and circuits, and simulate to check equivalence modulo global phase?
-
-
 class DecomposeTests(unittest.TestCase):
     def checkCompilationPreservesCircuitMatrix(self, cqasm_string):
         compiled_circuit_string = compile(cqasm_string)
