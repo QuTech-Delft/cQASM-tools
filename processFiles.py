@@ -4,23 +4,23 @@ from parsing import CQASMParser
 from metrics.longestRepeatingSubcircuit import longestRepeatingSubcircuit
 from metrics.paths import getPathStats
 from multiprocessing import Pool, Value
-from threading import Lock
 
 OUTPUT_FILE = os.path.dirname(os.path.realpath(__file__)) + "/result.csv"
 
 
-# MAX_NUM_LINES = 99999
+# MAX_NUM_LINES = 50000
 # files = []
 
 # for f in glob.glob(os.path.dirname(os.path.realpath(__file__)) + "/metrics/data/*.qasm"):
 #     num_lines = sum(1 for _ in open(f))
 
-#     if num_lines <= MAX_NUM_LINES:
+#     if num_lines > MAX_NUM_LINES:
 #         files.append(f)
 
 files = glob.glob(os.path.dirname(os.path.realpath(__file__)) + "/metrics/data/*.qasm")
 
-lock = Lock()
+# files = ["/shares/bulk/plehenaff/cQASM-tools/metrics/data/q=11_s=89_2qbf=022_1.qasm"]
+
 counter = Value('i', 0)
 
 statistics = sorted([
@@ -37,7 +37,6 @@ statistics = sorted([
 ])
 
 def writeToFile(data: dict):
-    lock.acquire()
     with open(OUTPUT_FILE, "a") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=statistics)
         assert(sorted(data.keys()) == statistics)
@@ -46,8 +45,6 @@ def writeToFile(data: dict):
     global counter
     counter.value += 1
     print(f"Done {counter.value} / {len(files)} files")
-    lock.release()
-
 
 def processFile(fileName):
     try:
@@ -77,17 +74,20 @@ def processFile(fileName):
         
     except Exception as e:
         print(f"File {fileName} gave error: {e} and was not processed")
-        lock.release()
+
         return
+    
+
 
 if __name__ == "__main__":
-    print(f"Will process files: {files}")
+    # print(f"Will process files: {files}")
 
     with open(OUTPUT_FILE, "w") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=statistics)
         writer.writeheader()
     
     # for f in files:
+    #     print(f"processing {f}")
     #     processFile(f)
     
     with Pool(8, initargs = (counter, )) as p:
