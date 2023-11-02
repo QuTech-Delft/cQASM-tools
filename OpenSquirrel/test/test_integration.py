@@ -36,7 +36,7 @@ class IntegrationTest(unittest.TestCase):
 
         output = str(myCircuit)
 
-        assert output == """version 3.0
+        self.assertEqual(output, """version 3.0
 
 qubit[3] qreg
 
@@ -60,5 +60,5 @@ x90 qreg[0]
 rz qreg[0], 0.8415926535897933
 x90 qreg[0]
 rz qreg[0], 1.5707963267948966
-"""
+""")
 

@@ -72,10 +72,10 @@ version 3.0
   h qu[0]
         """)
 
-        assert ast.nQubits == 1
-        assert ast.qubitRegisterName == "qu"
-        assert len(ast.operations) == 1
-        assert ast.operations[0] == ("h", (0,))
+        self.assertEqual(ast.nQubits, 1)
+        self.assertEqual(ast.qubitRegisterName, "qu")
+        self.assertEqual(len(ast.operations), 1)
+        self.assertEqual(ast.operations[0], ("h", (0,)))
 
     def test_rxyz(self):
         ast = self.getAST("""
@@ -87,12 +87,12 @@ version 3.0
   ry squirrel[0], -42.;;;;;
         """)
 
-        assert ast.nQubits == 2
-        assert ast.qubitRegisterName == "squirrel"
-        assert len(ast.operations) == 3
-        assert ast.operations[0] == ("h", (0,))
-        assert ast.operations[1] == ("rx", (1, 1.23))
-        assert ast.operations[2] == ("ry", (0, -42))
+        self.assertEqual(ast.nQubits, 2)
+        self.assertEqual(ast.qubitRegisterName, "squirrel")
+        self.assertEqual(len(ast.operations), 3)
+        self.assertEqual(ast.operations[0], ("h", (0,)))
+        self.assertEqual(ast.operations[1], ("rx", (1, 1.23)))
+        self.assertEqual(ast.operations[2], ("ry", (0, -42)))
 
     def test_multiplequbits(self):
         ast = self.getAST("""
@@ -103,14 +103,14 @@ version 3.0
   x90 large[4:5];
         """)
 
-        assert ast.nQubits == 10
-        assert ast.qubitRegisterName == "large"
-        assert len(ast.operations) == 5
-        assert ast.operations[0] == ("h", (0,))
-        assert ast.operations[1] == ("h", (3,))
-        assert ast.operations[2] == ("h", (6,))
-        assert ast.operations[3] == ("x90", (4,))
-        assert ast.operations[4] == ("x90", (5,))
+        self.assertEqual(ast.nQubits, 10)
+        self.assertEqual(ast.qubitRegisterName, "large")
+        self.assertEqual(len(ast.operations), 5)
+        self.assertEqual(ast.operations[0], ("h", (0,)))
+        self.assertEqual(ast.operations[1], ("h", (3,)))
+        self.assertEqual(ast.operations[2], ("h", (6,)))
+        self.assertEqual(ast.operations[3], ("x90", (4,)))
+        self.assertEqual(ast.operations[4], ("x90", (5,)))
 
     def test_aliases(self):
         ast = self.getAST("""
@@ -120,7 +120,7 @@ version 3.0
   H q[1]
         """)
 
-        assert ast.operations[0] == ("H", (1,))
+        self.assertEqual(ast.operations[0], ("H", (1,)))
 
 if __name__ == '__main__':
     unittest.main()

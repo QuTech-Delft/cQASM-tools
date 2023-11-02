@@ -22,7 +22,7 @@ class DecomposeMcKayTests(unittest.TestCase):
         # Get matrix after decompositions.
         actualMatrix = circuit.test_get_circuit_matrix()
 
-        assert areMatricesEqualUpToGlobalPhase(actualMatrix, expectedMatrix)
+        self.assertTrue(areMatricesEqualUpToGlobalPhase(actualMatrix, expectedMatrix))
 
     def test_one(self):
         cqasm = r"""
@@ -95,8 +95,7 @@ cr q[2], q[3], 2.123
 
         output = str(circuit)
 
-        print(output)
-        assert output == expected
+        self.assertEqual(output, expected)
 
     def test_random(self):
         cqasm3 = r"""
@@ -166,7 +165,7 @@ rz q[1], 3.141592653589793
         output = str(circuit)
 
         print(output)
-        assert output == expected
+        self.assertEqual(output, expected)
 
 if __name__ == '__main__':
     unittest.main()

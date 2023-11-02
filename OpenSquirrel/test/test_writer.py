@@ -11,24 +11,24 @@ class WriterTest(unittest.TestCase):
 
         written = writer.process(squirrelAST)
         
-        assert written == """version 3.0
+        self.assertEqual(written, """version 3.0
 
 qubit[3] myqubitsregister
 
-"""
+""")
 
         squirrelAST.addGate("h", 0)
         squirrelAST.addGate("cr", 0, 1, 1.234)
 
         written = writer.process(squirrelAST)
 
-        assert written == """version 3.0
+        self.assertEqual(written, """version 3.0
 
 qubit[3] myqubitsregister
 
-h q[0]
-cr q[0], q[1], 1.234
-"""
+h myqubitsregister[0]
+cr myqubitsregister[0], myqubitsregister[1], 1.234
+""")
 
 
 if __name__ == '__main__':

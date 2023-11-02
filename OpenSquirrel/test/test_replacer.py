@@ -19,8 +19,8 @@ class ReplacerTest(unittest.TestCase):
 
         replaced = replacer.process(squirrelAST, "h", hadamard_decomposition)
 
-        assert replaced.nQubits == 3
-        assert replaced.qubitRegisterName == "test"
-        assert len(replaced.operations) == 2
-        assert replaced.operations[0] == ("y90", (0,))
-        assert replaced.operations[1] == ("x", (0,))
+        self.assertEqual(replaced.nQubits, 3)
+        self.assertEqual(replaced.qubitRegisterName, "test")
+        self.assertEqual(len(replaced.operations), 2)
+        self.assertEqual(replaced.operations[0], ("y90", (0,)))
+        self.assertEqual(replaced.operations[1], ("x", (0,)))
