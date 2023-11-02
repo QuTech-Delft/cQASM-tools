@@ -6,6 +6,7 @@ from src.McKayDecomposer import McKayDecomposer
 from src.SquirrelErrorHandler import SquirrelErrorHandler
 from src.SquirrelASTCreator import SquirrelASTCreator
 from src.TestInterpreter import TestInterpreter
+from src.Replacer import Replacer
 from src.Writer import Writer
 import antlr4
 
@@ -65,7 +66,7 @@ class Circuit:
 
         assert gateName in self.gates, f"Cannot replace unknown gate `{gateName}`"
         replacer = Replacer(self.gates) # FIXME: only one instance of this is needed.
-        self.squirrelAST = replacer.process(self.squirrelAST)
+        self.squirrelAST = replacer.process(self.squirrelAST, gateName, f)
 
 
     def test_get_circuit_matrix(self):

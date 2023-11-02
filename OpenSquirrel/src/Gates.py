@@ -7,11 +7,11 @@ class Semantic:
 
 class SingleQubitAxisAngleSemantic(Semantic):
     def __init__(self, axis: (float, float, float), angle: float, phase: float):
-        self.axis = self.normalize(np.array(axis).astype(np.float64))
+        self.axis = self._normalize(np.array(axis).astype(np.float64))
         self.angle = angle
         self.phase = phase
 
-    def normalize(self, axis):
+    def _normalize(self, axis):
         norm = np.linalg.norm(axis)
         axis /= norm
         return axis

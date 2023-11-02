@@ -22,6 +22,5 @@ class ReplacerTest(unittest.TestCase):
         assert replaced.nQubits == 3
         assert replaced.qubitRegisterName == "test"
         assert len(replaced.operations) == 2
-        print(replaced.operations)
         assert replaced.operations[0] == ("y90", (0,))
         assert replaced.operations[1] == ("x", (0,))

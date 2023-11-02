@@ -6,15 +6,15 @@ class Replacer:
     def __init__(self, gates):
         self.gates = gates
     
-    def process(self, squirrelAST: SquirrelAST, gateName: str, f):
+    def process(self, squirrelAST: SquirrelAST, replacedGateName: str, f):
         result = SquirrelAST(self.gates, squirrelAST.nQubits, squirrelAST.qubitRegisterName)
 
-        signature = querySignature(self.gates, gateName)
-
+        signature = querySignature(self.gates, replacedGateName)
 
         for otherGateName, otherArgs in squirrelAST.operations:
-            if otherGateName != gateName:
-                result.addGate(otherGateName, otherArgs)
+            if otherGateName != replacedGateName:
+                result.addGate(otherGateName, *otherArgs)
+                continue
             
             # FIXME: handle case where if f is not a function but directly a list.
             

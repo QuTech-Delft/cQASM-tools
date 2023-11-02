@@ -8,7 +8,7 @@ TEST_GATES = {
         "signature": (ArgType.QUBIT,),
         "semantic": SingleQubitAxisAngleSemantic(axis = (1, 0, 1), angle = math.pi, phase = math.pi / 2),
     },
-    "H": "h",
+    "H": "h", # This is how you define an alias.
     "x": {
         "signature": (ArgType.QUBIT,),
         "semantic": SingleQubitAxisAngleSemantic(axis = (1, 0, 0), angle = math.pi, phase = math.pi / 2),
@@ -64,6 +64,16 @@ TEST_GATES = {
         ])),
     },
     "CNOT": "cnot",
+    "cz": {
+        "signature": (ArgType.QUBIT, ArgType.QUBIT),
+        "semantic": MultiQubitMatrixSemantic(np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, -1],
+        ])),
+    },
+    "CZ": "cz",
 
     # Rest is TODO
     

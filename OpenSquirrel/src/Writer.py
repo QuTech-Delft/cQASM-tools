@@ -5,13 +5,6 @@ class Writer:
     def __init__(self, gates):
         self.gates = gates
 
-    def _formatArg(self, x):
-        arg, argType = x
-        if argType == ArgType.QUBIT:
-            return f"q[{arg}]"
-        
-        return f"{arg}"
-
     def process(self, squirrelAST):
         output = ""
         output += f'''version 3.0\n\nqubit[{squirrelAST.nQubits}] {squirrelAST.qubitRegisterName}\n\n'''
@@ -19,6 +12,8 @@ class Writer:
         for gateName, gateArgs in squirrelAST.operations:
             signature = querySignature(self.gates, gateName)
 
-            output += f"{gateName} {', '.join(map(self._formatArg, zip(gateArgs, signature)))}\n" # FIXME: q[]
+            args = [f"{squirrelAST.qubitRegisterName}[{arg}]" if t == ArgType.QUBIT else f"{arg}" for arg, t in zip(gateArgs, signature)]
+
+            output += f"{gateName} {', '.join(args)}\n"
         
         return output
