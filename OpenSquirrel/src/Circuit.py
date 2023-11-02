@@ -63,7 +63,7 @@ class Circuit:
             * function parameter gives the decomposition based on parameters of original gate
         """
 
-        assert gateName in self.gates, f"Cannot replace unknown gate {gateName}"
+        assert gateName in self.gates, f"Cannot replace unknown gate `{gateName}`"
         replacer = Replacer(self.gates) # FIXME: only one instance of this is needed.
         self.squirrelAST = replacer.process(self.squirrelAST)
 

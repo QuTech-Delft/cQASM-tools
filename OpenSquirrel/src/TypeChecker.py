@@ -20,12 +20,12 @@ class TypeChecker(CQasm3Visitor.CQasm3Visitor):
         # Check that the type of operands match the gate declaration
         gateName = str(ctx.ID())
         if gateName not in self.gates:
-            raise Exception(f"Unknown gate {gateName}")
+            raise Exception(f"Unknown gate `{gateName}`")
 
         expectedSignature = querySignature(self.gates, gateName)
 
         if len(ctx.expr()) != len(expectedSignature):
-            raise Exception(f"Gate {gateName} takes {len(expectedSignature)} arguments, but {len(ctx.expr())} were given!")
+            raise Exception(f"Gate `{gateName}` takes {len(expectedSignature)} arguments, but {len(ctx.expr())} were given!")
 
         i = 0
         qubitArrays = None
@@ -39,7 +39,7 @@ class TypeChecker(CQasm3Visitor.CQasm3Visitor):
               qubitArrays = argumentData[1]
 
             if expectedSignature[i] != exprTypeToArgType(argumentType):
-                raise Exception(f"Argument #{i} passed to gate {gateName} is of type {exprTypeToArgType(argumentType)} but should be {expectedSignature[i]}")
+                raise Exception(f"Argument #{i} passed to gate `{gateName}` is of type {exprTypeToArgType(argumentType)} but should be {expectedSignature[i]}")
             i += 1
 
     def visitQubit(self, ctx):

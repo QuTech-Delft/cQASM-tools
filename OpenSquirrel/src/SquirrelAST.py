@@ -9,7 +9,7 @@ class SquirrelAST:
         self.qubitRegisterName = qubitRegisterName
     
     def addGate(self, gateName, *interpretedArgs):
-        assert gateName in self.gates, f"Unknown gate: {gateName}"
+        assert gateName in self.gates, f"Unknown gate: `{gateName}`"
         signature = querySignature(self.gates, gateName)
         assert len(signature) == len(interpretedArgs)
         

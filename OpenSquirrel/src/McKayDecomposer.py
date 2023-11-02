@@ -119,6 +119,6 @@ class McKayDecomposer:
       
       semantic = querySemantic(self.gates, gateName, *nonQubitArguments)
 
-      assert isinstance(semantic, SingleQubitAxisAngleSemantic), f"Not supported for single qubit gate {gateName}: {type(semantic)}"
+      assert isinstance(semantic, SingleQubitAxisAngleSemantic), f"Not supported for single qubit gate `{gateName}`: {type(semantic)}"
       
       self._acc(qubitArguments[0], semantic)

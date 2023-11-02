@@ -11,11 +11,15 @@ class Replacer:
 
         signature = querySignature(self.gates, gateName)
 
+
         for otherGateName, otherArgs in squirrelAST.operations:
             if otherGateName != gateName:
                 result.addGate(otherGateName, otherArgs)
             
             # FIXME: handle case where if f is not a function but directly a list.
+            
+            assert len(otherArgs) == len(signature)
+            originalQubits = set(otherArgs[i] for i in range(len(otherArgs)) if signature[i] == ArgType.QUBIT)
 
             replacement = f(*otherArgs)
 
@@ -29,6 +33,11 @@ class Replacer:
             for replacementGate in replacement:
                 replacementGateName, replacementGateArgs = replacementGate
 
-                result.addGate(replacementGateName, replacementGateArgs)
+                replacementGateSignature = querySignature(self.gates, replacementGateName)
+                assert len(replacementGateArgs) == len(replacementGateSignature)
+                assert all(replacementGateArgs[i] in originalQubits for i in range(len(replacementGateArgs)) if replacementGateSignature[i] == ArgType.QUBIT), \
+                    f"Substitution for gate `{gateName}` must use the input qubits {originalQubits} only"
+
+                result.addGate(replacementGateName, *replacementGateArgs)
         
         return result

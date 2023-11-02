@@ -27,7 +27,7 @@ class ControlledSemantic(MultiQubitMatrixSemantic):
 
 def queryEntry(gatesDict, gateName):
     if gateName not in gatesDict:
-        raise Exception(f"Unknown gate or alias of gate: {gateName}")
+        raise Exception(f"Unknown gate or alias of gate: `{gateName}`")
     
     entry = gatesDict[gateName]
 
@@ -42,12 +42,12 @@ def querySemantic(gatesDict, gateName, *gateArgs):
 
     entry = queryEntry(gatesDict, gateName)
     
-    assert "semantic" in entry, f"Gate semantic not defined for gate: {gateName}"
+    assert "semantic" in entry, f"Gate semantic not defined for gate: `{gateName}`"
 
     semantic = entry["semantic"]
 
     if isinstance(semantic, Semantic):
-        assert len(gateArgs) == 0, f"Gate {gateName} accepts no argument"
+        assert len(gateArgs) == 0, f"Gate `{gateName}` accepts no argument"
 
         return semantic
 
@@ -56,7 +56,7 @@ def querySemantic(gatesDict, gateName, *gateArgs):
 def querySignature(gatesDict, gateName: str):
     entry = queryEntry(gatesDict, gateName)
 
-    assert "signature" in entry, f"Gate signature not defined for gate: {gateName}"
+    assert "signature" in entry, f"Gate signature not defined for gate: `{gateName}`"
 
     signature = entry["signature"]
 

@@ -5,8 +5,8 @@ from src.Replacer import Replacer
 
 def hadamard_decomposition(q):
     return [
-        ("y90", q),
-        ("x", q),
+        ("y90", (q,)),
+        ("x", (q,)),
     ]
 
 class ReplacerTest(unittest.TestCase):

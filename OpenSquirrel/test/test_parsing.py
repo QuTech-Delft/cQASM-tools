@@ -53,15 +53,15 @@ class ParsingTest(unittest.TestCase):
             self.typeCheck("version 3.1; qubit[1] q; h q[0]")
 
     def test_unknowngate(self):
-        with self.assertRaisesRegex(Exception, "Unknown gate unknowngate"):
+        with self.assertRaisesRegex(Exception, "Unknown gate `unknowngate`"):
             self.typeCheck("version 3.0; qubit[1] q; unknowngate q[0]")
 
     def test_wrongargumenttype(self):
-        with self.assertRaisesRegex(Exception, "Argument #1 passed to gate rx is of type ArgType.INT but should be ArgType.FLOAT"):
+        with self.assertRaisesRegex(Exception, "Argument #1 passed to gate `rx` is of type ArgType.INT but should be ArgType.FLOAT"):
             self.typeCheck("version 3.0; qubit[1] q; rx q[0], 42")
     
     def test_wrongargumenttype2(self):
-        with self.assertRaisesRegex(Exception, "Argument #0 passed to gate rx is of type ArgType.FLOAT but should be ArgType.QUBIT"):
+        with self.assertRaisesRegex(Exception, "Argument #0 passed to gate `rx` is of type ArgType.FLOAT but should be ArgType.QUBIT"):
             self.typeCheck("version 3.0; qubit[1] q; rx 42., q[0]")
 
     def test_simple(self):
