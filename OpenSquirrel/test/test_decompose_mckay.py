@@ -164,7 +164,6 @@ rz q[1], 3.141592653589793
 
         output = str(circuit)
 
-        print(output)
         self.assertEqual(output, expected)
 
 if __name__ == '__main__':
