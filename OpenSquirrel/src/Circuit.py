@@ -55,6 +55,19 @@ class Circuit:
         mcKayDecomposer = McKayDecomposer(self.gates)
         self.squirrelAST = mcKayDecomposer.process(self.squirrelAST)
     
+
+    def replace(self, gateName, f):
+        """Manually replace occurrences of a given gate with a list of gates.
+
+            * this can be called decomposition - but it's the least fancy version of it
+            * function parameter gives the decomposition based on parameters of original gate
+        """
+
+        assert gateName in self.gates, f"Cannot replace unknown gate {gateName}"
+        replacer = Replacer(self.gates) # FIXME: only one instance of this is needed.
+        self.squirrelAST = replacer.process(self.squirrelAST)
+
+
     def test_get_circuit_matrix(self):
         """Get the (large) unitary matrix corresponding to the circuit.
 
@@ -65,6 +78,7 @@ class Circuit:
 
         interpreter = TestInterpreter(self.gates)
         return interpreter.process(self.squirrelAST)
+
 
     def __repr__(self):
         """Write the circuit to a cQasm3 string.

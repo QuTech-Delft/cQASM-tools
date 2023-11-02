@@ -44,6 +44,11 @@ TEST_GATES = {
         "semantic": lambda theta: SingleQubitAxisAngleSemantic(axis = (0, 1, 0), angle = theta, phase = 0),
     },
     "RY": "ry",
+    "y90": {
+        "signature": (ArgType.QUBIT,),
+        "semantic": SingleQubitAxisAngleSemantic(axis = (0, 1, 0), angle = math.pi / 2, phase = 0),
+    },
+    "Y90": "y90",
     "rz": {
         "signature": (ArgType.QUBIT, ArgType.FLOAT),
         "semantic": lambda theta: SingleQubitAxisAngleSemantic(axis = (0, 0, 1), angle = theta, phase = 0),

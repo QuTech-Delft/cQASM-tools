@@ -1,5 +1,4 @@
 from math import acos, cos, sin, atan2, pi, sqrt
-from parsing.GeneratedParsingCode import CQasm3Visitor
 from src.Common import ATOL, ExprType, ArgType, Parameter
 from src.SquirrelAST import SquirrelAST
 from src.Gates import SingleQubitAxisAngleSemantic, queryEntry, querySignature, querySemantic

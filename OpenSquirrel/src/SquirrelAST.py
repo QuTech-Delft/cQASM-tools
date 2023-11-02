@@ -1,3 +1,4 @@
+from src.Gates import querySignature
 
 class SquirrelAST:
     # This is just a list of gates (for now?)
@@ -9,5 +10,10 @@ class SquirrelAST:
     
     def addGate(self, gateName, *interpretedArgs):
         assert gateName in self.gates, f"Unknown gate: {gateName}"
+        signature = querySignature(self.gates, gateName)
+        assert len(signature) == len(interpretedArgs)
+        
+        # FIXME: Also check int vs float
+
         self.operations.append((gateName, interpretedArgs))
     
