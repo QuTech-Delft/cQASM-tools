@@ -30,15 +30,12 @@ class IntegrationTest(unittest.TestCase):
         
         # Do 1q-gate fusion and decompose with McKay decomposition.
 
-        print(str(myCircuit))
-
         myCircuit.decompose_mckay()
 
         # Write the transformed circuit as a cQasm3 string.
 
         output = str(myCircuit)
 
-        print(output)
         assert output == """version 3.0
 
 qubit[3] qreg
