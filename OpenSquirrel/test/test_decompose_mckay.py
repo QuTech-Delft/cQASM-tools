@@ -1,170 +1,83 @@
-from src.Circuit import Circuit
-from src.Common import ATOL
 from test.TestGates import TEST_GATES
 from test.TestHelpers import areMatricesEqualUpToGlobalPhase
+from src.SquirrelAST import SquirrelAST
+from src.TestInterpreter import TestInterpreter
+from src.McKayDecomposer import McKayDecomposer
 import unittest
-import numpy as np
 
 class DecomposeMcKayTests(unittest.TestCase):
-    def checkMcKayDecomposition(self, cqasm3_string):
+    def checkMcKayDecomposition(self, squirrelAST, expectedAST = None):
         """
-            Check whether the mcKay decomposition transformation applied to the input string preserves the
+            Check whether the mcKay decomposition transformation applied to the input AST preserves the
             circuit matrix up to an irrelevant global phase factor.
         """
 
-        circuit = Circuit(TEST_GATES, cqasm3_string)
-
+        interpreter = TestInterpreter(squirrelAST.gates)
         # Store matrix before decompositions.
-        expectedMatrix = circuit.test_get_circuit_matrix()
+        expectedMatrix = interpreter.process(squirrelAST)
 
-        circuit.decompose_mckay()
-        
+        decomposer = McKayDecomposer(squirrelAST.gates)
+        output = decomposer.process(squirrelAST)
+
+        self.assertEqual(output.nQubits, squirrelAST.nQubits)
+        self.assertEqual(output.qubitRegisterName, squirrelAST.qubitRegisterName)
+
+        if expectedAST is not None:
+            self.assertEqual(output, expectedAST)
+
         # Get matrix after decompositions.
-        actualMatrix = circuit.test_get_circuit_matrix()
+        actualMatrix = interpreter.process(output)
 
         self.assertTrue(areMatricesEqualUpToGlobalPhase(actualMatrix, expectedMatrix))
 
     def test_one(self):
-        cqasm = r"""
-version 3.0
+        ast = SquirrelAST(TEST_GATES, 2, "squirrel")
 
-qubit[2] squirrel
+        ast.addGate("ry", 0, 23847628349.123)
+        ast.addGate("rx", 0, 29384672.234)
+        ast.addGate("rz", 0, 9877.87634)
 
-// iuwhefjwn
-
-/* This is a multi-
-        line comment block */
-
-ry squirrel[0], 23847628349.123
-rx squirrel[0], 29384672.234
-rz squirrel[0], 9877.87634
-"""
-
-        self.checkMcKayDecomposition(cqasm)
+        self.checkMcKayDecomposition(ast)
 
     def test_two(self):
-        cqasm = r"""
-version 3.0
+        ast = SquirrelAST(TEST_GATES, 2, "squirrel")
 
-qubit[2] squirrel
+        ast.addGate("ry", 0, 23847628349.123)
+        ast.addGate("cnot", 0, 1)
+        ast.addGate("rx", 0, 29384672.234)
+        ast.addGate("rz", 0, 9877.87634)
+        ast.addGate("cnot", 0, 1)
+        ast.addGate("rx", 0, 29384672.234)
+        ast.addGate("rz", 0, 9877.87634)
 
-ry squirrel[0], 23847628349.123
-cnot squirrel[0], squirrel[1]
-rx squirrel[1], 29384672.234
-rz squirrel[0], 9877.87634
-cnot squirrel[0], squirrel[1]
-rx squirrel[1], 29384672.234
-rz squirrel[0], 9877.87634
-"""
+        self.checkMcKayDecomposition(ast)
 
-        self.checkMcKayDecomposition(cqasm)
 
     def test_smallrandom(self):
-        cqasm3 = r"""
-        version 3.0
-        qubit[4] q
+        ast = SquirrelAST(TEST_GATES, 4, "q")
 
-        H q[2]
-        cr q[2], q[3], 2.123
-        H q[1]
-        H q[0]
-        H q[2]
-        H q[1]
-        H q[0]
-        cr q[2], q[3], 2.123
-    
-"""
-
-        expected = """version 3.0
-
-qubit[4] q
-
-x90 q[2]
-rz q[2], 1.5707963267948966
-x90 q[2]
-cr q[2], q[3], 2.123
-x90 q[2]
-rz q[2], 1.5707963267948966
-x90 q[2]
-cr q[2], q[3], 2.123
-"""
-
-        circuit = Circuit(TEST_GATES, cqasm3)
-
-        circuit.decompose_mckay()
-
-        output = str(circuit)
-
-        self.assertEqual(output, expected)
-
-    def test_random(self):
-        cqasm3 = r"""
-        version 3.0
-
-        // This is a single line comment which ends on the newline.
-        // The cQASM string must begin with the version instruction even before any comments.
-
-        /* This is a multi-
-        line comment block */
+        ast.addGate("H", 2)
+        ast.addGate("cr", 2, 3, 2.123)
+        ast.addGate("H", 1)
+        ast.addGate("H", 0)
+        ast.addGate("H", 2)
+        ast.addGate("H", 1)
+        ast.addGate("H", 0)
+        ast.addGate("cr", 2, 3, 2.123)
 
 
-        qubit[4] q   //declaration
+        expectedAst = SquirrelAST(TEST_GATES, 4, "q")
 
-        //let us create a Bell state on 2 qubits and a |+> state on the third qubit
+        expectedAst.addGate("x90", 2)
+        expectedAst.addGate("rz", 2, 1.5707963267948966)
+        expectedAst.addGate("x90", 2)
+        expectedAst.addGate("cr", 2, 3, 2.123)
+        expectedAst.addGate("x90", 2)
+        expectedAst.addGate("rz", 2, 1.5707963267948966)
+        expectedAst.addGate("x90", 2)
+        expectedAst.addGate("cr", 2, 3, 2.123)
 
-        H q[2]
-        H q[1]
-        H q[0]
-        RZ q[0], 1.5707963267949
-        RY q[0], -0.2
-        cnot q[1], q[0]
-        RZ q[0], 1.5789
-        cnot q[1], q[0]
-        cnot q[1], q[2]
-        RZ q[1], 2.5707963267949
-        cr q[2], q[3], 2.123
-        RY q[1], -1.5707963267949
-
-        """
-
-        expected = """version 3.0
-
-qubit[4] q
-
-x90 q[1]
-rz q[1], 1.5707963267948966
-x90 q[1]
-rz q[0], -0.20000000000000018
-x90 q[0]
-rz q[0], 1.5707963267948957
-x90 q[0]
-rz q[0], 1.5707963267949
-cnot q[1], q[0]
-rz q[0], -2.352142653589793
-x90 q[0]
-rz q[0], 3.141592653589793
-x90 q[0]
-rz q[0], 0.7894500000000004
-cnot q[1], q[0]
-x90 q[2]
-rz q[2], 1.5707963267948966
-x90 q[2]
-cnot q[1], q[2]
-cr q[2], q[3], 2.123
-rz q[1], 2.5707963267949
-x90 q[1]
-rz q[1], 1.570796326794893
-x90 q[1]
-rz q[1], 3.141592653589793
-"""
-
-        circuit = Circuit(TEST_GATES, cqasm3)
-
-        circuit.decompose_mckay()
-
-        output = str(circuit)
-
-        self.assertEqual(output, expected)
+        self.checkMcKayDecomposition(ast, expectedAst)
 
 if __name__ == '__main__':
     unittest.main()

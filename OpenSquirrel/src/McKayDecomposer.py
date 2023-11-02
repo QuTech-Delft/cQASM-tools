@@ -91,6 +91,7 @@ class McKayDecomposer:
     self.oneQubitGates[qubit] = {"angle": combinedAngle, "axis": combinedAxis, "phase": combinedPhase}
 
   def process(self, squirrelAST):
+    # FIXME: duplicate gates in ast and self??
     self.output = SquirrelAST(self.gates, squirrelAST.nQubits, squirrelAST.qubitRegisterName)
     self.oneQubitGates = {}
 

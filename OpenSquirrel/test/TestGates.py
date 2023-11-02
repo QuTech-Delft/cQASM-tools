@@ -1,6 +1,6 @@
 from src.Common import ArgType, Parameter
 import numpy as np
-import math
+import math, cmath
 from src.Gates import SingleQubitAxisAngleSemantic, MultiQubitMatrixSemantic
 
 TEST_GATES = {
@@ -74,13 +74,16 @@ TEST_GATES = {
         ])),
     },
     "CZ": "cz",
-
-    # Rest is TODO
-    
     "cr": {
         "signature": (ArgType.QUBIT, ArgType.QUBIT, ArgType.FLOAT),
+        "semantic": lambda theta: MultiQubitMatrixSemantic(np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, cmath.rect(1, theta)],
+        ])),
     },
-    "CR": {
-        "signature": (ArgType.QUBIT, ArgType.QUBIT, ArgType.FLOAT),
-    },
+    "CR": "cr",
+
+    # Rest is TODO
 }
