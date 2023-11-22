@@ -82,7 +82,7 @@ def getParentMaxLengthOfPath(graph, parent, nodesData):
     return (maxLengthOfChildrenPath + 1, parentNumberOfPathsWithMaxLength)
 
 def twoQubitGates(graph, parent, nodesData, parentMaxLengthOfPath):
-    maxNumberOfTwoQubitGatesInPathsWithMaxLength = max(nodesData[n].maxNumberOfTwoQubitGatesInPathsWithMaxLength for n in graph.successors(parent))
+    maxNumberOfTwoQubitGatesInPathsWithMaxLength = max(nodesData[n].maxNumberOfTwoQubitGatesInPathsWithMaxLength for n in graph.successors(parent) if nodesData[n].maxLengthOfPath == (parentMaxLengthOfPath - 1))
 
     numberOfPathsWithMaxLengthWithMaxNumberOfTwoQubitGates = sum(nodesData[n].numberOfPathsWithMaxLengthWithMaxNumberOfTwoQubitGates for n in graph.successors(parent) if nodesData[n].maxLengthOfPath == (parentMaxLengthOfPath - 1) and nodesData[n].maxNumberOfTwoQubitGatesInPathsWithMaxLength == maxNumberOfTwoQubitGatesInPathsWithMaxLength)
 
@@ -311,7 +311,8 @@ qubits 3
   cnot q[2], q[0]
 """
 
-    print(getPathStats(CQASMParser.parseCQASMString(cq).subcircuits[0].instructions))
+    result = getPathStats(CQASMParser.parseCQASMString(cq).subcircuits[0].instructions)
+    # print(result)
 
 
 def test5():
@@ -342,6 +343,39 @@ qubits 3
 
     checkSame(output, expected)
 
+def test6():
+    cq = """
+    version 1.0
+
+qubits 4
+
+.testCircuit
+  cnot q[0], q[3]
+  cnot q[1], q[2]
+  cnot q[1], q[3]
+  h q[0]
+  h q[0]
+  h q[1]
+  h q[1]
+  h q[1]
+  h q[1]
+  h q[2]
+  h q[2]
+  h q[2]
+  h q[2]
+  h q[2]
+  h q[2]
+"""
+
+    output = getPathStats(CQASMParser.parseCQASMString(cq).subcircuits[0].instructions)
+
+    assert output["NumberOfGatesInCriticalPath"] == 7
+    assert output["NumberOfCriticalPaths"] == 1
+    assert output["NumberOfCriticalPathsWithMaxTwoQubitsGates"] == 1
+    assert output["MaxNumberOfTwoQubitGatesInCriticalPath"] == 1
+
+
+
 
 if __name__ == "__main__":
     test1()
@@ -349,3 +383,4 @@ if __name__ == "__main__":
     test3()
     test4()
     test5()
+    test6()
