@@ -307,7 +307,7 @@ def p_map(p):
     # p[0] = Gate(name = p[5], operands = p[6], controlBits = controlBits)
 
 def p_error(p):
-    raise Exception("Syntax error in input!")
+    raise Exception(f"Syntax error in input at line {p.lineno}!")
 
 from ply.yacc import yacc
 parser = yacc(debug=debug)
